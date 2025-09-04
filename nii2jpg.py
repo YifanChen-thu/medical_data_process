@@ -94,8 +94,8 @@ def process_patient(patient_name, split_dir, train_data_dir, test_data_dir, val_
             # flair_img_pil = Image.fromarray(normalize_image(t2f_slices[:, :, idx]))
 
             # 将 T1 和 T1C 切片转换为 PIL 图像
-            t1_img_pil = Image.fromarray(normalize_image(no_c_data[:, :, idx]))
-            t1ce_img_pil = Image.fromarray(normalize_image(with_c_data[:, :, idx]))
+            t1_img_pil = Image.fromarray(normalize_image(no_c_data[:, :, idx])).rotate(90, expand=True)
+            t1ce_img_pil = Image.fromarray(normalize_image(with_c_data[:, :, idx])).rotate(90, expand=True)
 
             # 拼接图像 T1 -> T1CE   # L代表灰度图像模式
             combined_img3 = Image.new('L', (t1_img_pil.width + t1ce_img_pil.width, t1_img_pil.height))
@@ -104,24 +104,26 @@ def process_patient(patient_name, split_dir, train_data_dir, test_data_dir, val_
 
             # 保存图像
             combined_img3.save(os.path.join(save_dir_modality, split_dir, f"{patient_name}_{idx}.jpg"))
-    elif task_mode=='one2many':#many to one tasks
+    elif task_mode=='one2many':#many to one tasks （dce1-> dce2 dce3）
         pass
-    elif task_mode=='many2one':# many to one tasks
-        pass
-    # 
-    # for idx in range(num_slices):
-    #     # 将 T1, FLAIR, T2 切片转换为 PIL 图像并调整到相同的数据范围
-    #     t2_img_pil = Image.fromarray(normalize_image(t2w_slices[:, :, idx]))
-    #     flair_img_pil = Image.fromarray(normalize_image(t2f_slices[:, :, idx]))
-    #     t1n_img_pil = Image.fromarray(normalize_image(t1n_slices[:, :, idx]))
+    elif task_mode=='many2one':# many to one tasks （dce1  dce3 -> dce2）
+        for idx in range(total_slices):
+            # 将 dce1, dce2, dce3 切片转换为 PIL 图像并调整到相同的数据范围, 保持原来nii的方向
+            dce1_img_pil = Image.fromarray(normalize_image(no_c_data[:, :, idx])).rotate(90, expand=True)
+            dce2_img_pil = Image.fromarray(normalize_image(with_c_data[:, :, idx])).rotate(90, expand=True)
+            dce3_img_pil = Image.fromarray(normalize_image(with_c_2_data[:, :, idx])).rotate(90, expand=True)
+            # 拼接图像 dce1  -> dce3 -> dce2 RGB三通道
+            combined_img_left = Image.merge("RGB", (dce1_img_pil, dce3_img_pil, dce2_img_pil))
+            combined_img_right = Image.merge("RGB", (dce2_img_pil, dce2_img_pil, dce2_img_pil))
+            combined_img = Image.new('RGB',
+                                     (combined_img_left.width + combined_img_right.width, combined_img_left.height))
+            combined_img.paste(combined_img_left, (0, 0))
+            combined_img.paste(combined_img_right, (combined_img_left.width, 0))
+            # 保存图像
+            combined_img.save(os.path.join(save_dir_modality, split_dir, f"{patient_name}_{idx}.png"))
+    
 
-    #     # 拼接图像 T1 -> FLAIR -> T2 RGB三通道
-    #     combined_img_left = Image.merge("RGB", (t1n_img_pil, flair_img_pil, t2_img_pil))
-    #     combined_img_right = Image.merge("RGB", (t2_img_pil, t2_img_pil, t2_img_pil))
-    #     combined_img = Image.new('RGB',
-    #                              (combined_img_left.width + combined_img_right.width, combined_img_left.height))
-    #     combined_img.paste(combined_img_left, (0, 0))
-    #     combined_img.paste(combined_img_right, (combined_img_left.width, 0))
+
     #     # 拼接图像 T2 -> FLAIR -> T1 RGB三通道
     #     combined_img_left2 = Image.merge("RGB", (t2_img_pil, flair_img_pil, t1n_img_pil))
     #     combined_img_right2 = Image.merge("RGB", (t1n_img_pil, t1n_img_pil, t1n_img_pil))
@@ -227,8 +229,7 @@ python nii2jpg.py \
   --modality 'DCE' \
   --modality_modality 'dce1_dce2' \
   --task_mode 'one2one'
-"""
-"""
+
 python nii2jpg.py \
   --dataset_name 'Breast_MR_train_val_test_nii_dce_only' \
   --output_root '/date/yifanchen/data_no_mask/2D_jpg' \
@@ -236,6 +237,14 @@ python nii2jpg.py \
   --modality 'DCE' \
   --modality_modality 'dce13_dce2' \
   --task_mode 'many2one'
+
+python nii2jpg.py \
+  --dataset_name 'Breast_MR_train_val_test_nii_dce_only' \
+  --output_root '/date/yifanchen/data_no_mask/2D_jpg' \
+  --input_root '/date/yifanchen/data_no_mask' \
+  --modality 'DCE' \
+  --modality_modality 'dce1_dce23' \
+  --task_mode 'one2many'
 
 """
     
