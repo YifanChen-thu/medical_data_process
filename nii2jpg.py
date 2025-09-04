@@ -143,41 +143,29 @@ def process_patient(patient_name, split_dir, train_data_dir, test_data_dir, val_
     #     combined_img3.save(os.path.join(save_dir_t1_t2_flair, split_dir, f"{patient_name}_{idx}.png"))
 
 def prepare_paired(args):
-    data_root = args.data_root
-    train_data_dir = args.train_data_dir
-    val_data_dir = args.val_data_dir
-    test_data_dir = args.test_data_dir
-
     task_mode=args.task_mode
     modality_modality=args.modality_modality
     modality=args.modality
 
-    save_dir_modality = os.path.join(data_root, modality_modality)
+    dataset_name = args.dataset_name
+    output_root = os.path.join(args.output_root, f'{dataset_name.split("_")[0]}_{task_mode}_jpg')
+    input_root = os.path.join(args.input_root, dataset_name)
+
+    train_data_dir = os.path.join(input_root,'train')
+    val_data_dir = os.path.join(input_root,'val')
+    test_data_dir = os.path.join(input_root,'test')
+
+    
+
+    save_dir_modality = os.path.join(output_root, modality_modality)
     # # one  to one tasks CT->CTC, dce1->dce2
     # # many to one tasks dce1,dce3->dce2
     # # one  to many tasks dce1->dce2,3
-
-   
-
     os.makedirs(save_dir_modality, exist_ok=True)
-
-
 
     train_split_dir = ["train", "val", "test"]
     for split_dir in train_split_dir:
         os.makedirs(os.path.join(save_dir_modality, split_dir), exist_ok=True)
-
-    # valid_ratio = 0.2
-    # num_slices = 100
-
-    # # brats17  有lgg和hgg
-    # train_patients_name = []
-    # for j in ['LGG', 'HGG']:
-    #     train_patients_name+=os.listdir(os.path.join(train_data_dir, j))
-
-    # train_patients_name = os.listdir(train_data_dir)
-    # import pdb;pdb.set_trace()
-
     #防止和patient id并列的那一层里面有其他的文件
     # import pdb;pdb.set_trace()
     train_patients_name = []
@@ -192,9 +180,6 @@ def prepare_paired(args):
     for test_pre in os.listdir(test_data_dir):
         if os.path.isdir(os.path.join(test_data_dir, test_pre)):
             test_patients_name.append(test_pre)
-
-    # valid_patients_name = np.random.choice(train_patients_name, int(len(train_patients_name) * valid_ratio))
-    # train_patients_name = list(set(train_patients_name) - set(valid_patients_name))
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = []
@@ -219,12 +204,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('Prepare_Dataset')
     parser.add_argument('--dataset_name', dest='dataset_name', help='dataset_name', type=str,
                         default='Breast_MR_train_val_test_nii_dce_only', required=False)
-    parser.add_argument('--output_root', dest='data_root', help='output dir', type=str,
-                        default='/date/yifanchen/data_no_mask/2D_jpg/', required=False)
+    parser.add_argument('--output_root', dest='output_root', help='output dir', type=str,
+                        default='/date/yifanchen/data_no_mask/2D_jpg', required=False)
     parser.add_argument('--input_root', dest='input_root', help='output dir', type=str,
-                        default='/date/yifanchen/data_no_mask/2D_jpg/', required=False)    
+                        default='/date/yifanchen/data_no_mask/Breast_MR_train_val_test_nii_dce_only/', required=False)    
     parser.add_argument('--modality', dest='modality', help='modality=[CT,DCE]', type=str,
                         default='CT', required=False)
+    parser.add_argument('--modality_modality', dest='modality_modality', help='modality=[CT_CTC,dce1_dce2,dce13_dce2,dce1_dce23]', type=str,
+                        default='CT_CTC', required=False)
     parser.add_argument('--task_mode', dest='task_mode', help='type of task=[one2one,one2many,many2one]', type=str,
                         default='one2one', required=False)
     
@@ -232,12 +219,22 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     prepare_paired(args)
-
-# dataset_name = 'Breast_MR_train_val_test_nii_dce_only'
-# data_root = '/date/yifanchen/data_no_mask/2D_jpg' + f'/{}' 
-# input_root =
-
 """
-python nii2jpg.py 
+python nii2jpg.py \
+  --dataset_name 'Breast_MR_train_val_test_nii_dce_only' \
+  --output_root '/date/yifanchen/data_no_mask/2D_jpg' \
+  --input_root '/date/yifanchen/data_no_mask' \
+  --modality 'DCE' \
+  --modality_modality 'dce1_dce2' \
+  --task_mode 'one2one'
+"""
+"""
+python nii2jpg.py \
+  --dataset_name 'Breast_MR_train_val_test_nii_dce_only' \
+  --output_root '/date/yifanchen/data_no_mask/2D_jpg' \
+  --input_root '/date/yifanchen/data_no_mask' \
+  --modality 'CT' \
+  --modality_modality 'CT_CTC' \
+  --task_mode 'one2one'
 """
     
