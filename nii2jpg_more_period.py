@@ -34,6 +34,7 @@ def normalize_image(image):
 def process_patient(patient_name, split_dir, train_data_dir, test_data_dir, val_data_dir, save_dir_modality, task_mode, modality): #, num_slices):
     
 
+
     if split_dir == "test":
         patient_dir = os.path.join(test_data_dir, patient_name)
     elif split_dir == 'train':
@@ -41,73 +42,74 @@ def process_patient(patient_name, split_dir, train_data_dir, test_data_dir, val_
     elif split_dir == 'val':
         patient_dir = os.path.join(val_data_dir, patient_name)
     
+    #period
+    patient_period=[]#
+    for period_id in os.listdir(patient_dir):
+        period_dir = os.path.join(patient_dir, period_id)
+        if os.path.isdir(period_dir): #'.DS_Store'
+            patient_period.append(period_dir)
     
 
     if modality == 'CT':
         no_c_suffix = '_CT.nii'
         with_c_suffix = '_CTC.nii'
 
-        for patient_id in os.listdir(patient_dir):
-            if patient_id.endswith(no_c_suffix):
-                no_c_path = os.path.join(patient_dir, patient_id)
-            elif patient_id.endswith(with_c_suffix):
-                with_c_data = os.path.join(patient_dir, patient_id)
+        for period_period_dir in patient_period:
+            for patient_id in os.listdir(period_period_dir):
+                new_path=os.path.join(period_period_dir, patient_id)
+                
+                if patient_id.endswith(no_c_suffix) or patient_id.endswith(with_c_suffix):#其他的文件都不读
+                    flag=True
+                    if patient_id.endswith(no_c_suffix):
+                        no_c_path = new_path
+                    elif patient_id.endswith(with_c_suffix):
+                        with_c_path = new_path
+                else:
+                    flag=False
 
-    elif modality == 'DCE':
-        no_c_suffix = '_dce1.nii'
-        with_c_suffix = '_dce2.nii'
-        with_c_2_suffix = '_dce3.nii'
+            if flag:     
+                # H, W, C
+                with_c_data = nib.load(with_c_path).get_fdata()
+                no_c_data = nib.load(no_c_path).get_fdata()
+                if task_mode=='one2many' or task_mode=='many2one':
+                    with_c_2_data = nib.load(with_c_2_data).get_fdata()
+                
 
-        for patient_id in os.listdir(patient_dir):
-            if patient_id.endswith(no_c_suffix):
-                no_c_path = os.path.join(patient_dir, patient_id)
-            elif patient_id.endswith(with_c_suffix):
-                with_c_data = os.path.join(patient_dir, patient_id)
-            elif patient_id.endswith(with_c_2_suffix):
-                with_c_2_data = os.path.join(patient_dir, patient_id)
-    
+                total_slices = with_c_data.shape[2]
 
+                # 计算开始和结束的索引以提取中间的100个切片
+                # mid_point = total_slices // 2
+                # start = max(mid_point - num_slices // 2, 0)
+                # end = min(mid_point + num_slices // 2, total_slices)
+                # selected_slices = [i for i in range(start, end)]
+                # t1c_slices = t1c_data[:, :, selected_slices]
+                # t1_slices = t1_data[:, :, selected_slices]
+                # t2f_slices = t2f_data[:, :, selected_slices]
+                # t2w_slices = t2w_data[:, :, selected_slices]
+                if task_mode=='one2one':# one to one tasks
+                
+                    for idx in range(total_slices):
+                        # 将 T2 和 FLAIR 切片转换为 PIL 图像
+                        # t2_img_pil = Image.fromarray(normalize_image(t2w_slices[:, :, idx]))
+                        # flair_img_pil = Image.fromarray(normalize_image(t2f_slices[:, :, idx]))
 
-    # H, W, C
-    with_c_data = nib.load(with_c_data).get_fdata()
-    no_c_data = nib.load(no_c_path).get_fdata()
-    if task_mode=='one2many' or task_mode=='many2one':
-        with_c_2_data = nib.load(with_c_2_data).get_fdata()
-    
+                        # 将 T1 和 T1C 切片转换为 PIL 图像
+                        t1_img_pil = Image.fromarray(normalize_image(no_c_data[:, :, idx])).rotate(-90, expand=True)
+                        t1ce_img_pil = Image.fromarray(normalize_image(with_c_data[:, :, idx])).rotate(-90, expand=True)
 
-    total_slices = with_c_data.shape[2]
+                        # 拼接图像 T1 -> T1CE   # L代表灰度图像模式
+                        combined_img3 = Image.new('L', (t1_img_pil.width + t1ce_img_pil.width, t1_img_pil.height))
+                        combined_img3.paste(t1_img_pil, (0, 0))
+                        combined_img3.paste(t1ce_img_pil, (t1_img_pil.width, 0))
 
-    # 计算开始和结束的索引以提取中间的100个切片
-    # mid_point = total_slices // 2
-    # start = max(mid_point - num_slices // 2, 0)
-    # end = min(mid_point + num_slices // 2, total_slices)
-    # selected_slices = [i for i in range(start, end)]
-    # t1c_slices = t1c_data[:, :, selected_slices]
-    # t1_slices = t1_data[:, :, selected_slices]
-    # t2f_slices = t2f_data[:, :, selected_slices]
-    # t2w_slices = t2w_data[:, :, selected_slices]
-    if task_mode=='one2one':# one to one tasks
-    
-        for idx in range(total_slices):
-            # 将 T2 和 FLAIR 切片转换为 PIL 图像
-            # t2_img_pil = Image.fromarray(normalize_image(t2w_slices[:, :, idx]))
-            # flair_img_pil = Image.fromarray(normalize_image(t2f_slices[:, :, idx]))
-
-            # 将 T1 和 T1C 切片转换为 PIL 图像
-            t1_img_pil = Image.fromarray(normalize_image(no_c_data[:, :, idx]))
-            t1ce_img_pil = Image.fromarray(normalize_image(with_c_data[:, :, idx]))
-
-            # 拼接图像 T1 -> T1CE   # L代表灰度图像模式
-            combined_img3 = Image.new('L', (t1_img_pil.width + t1ce_img_pil.width, t1_img_pil.height))
-            combined_img3.paste(t1_img_pil, (0, 0))
-            combined_img3.paste(t1ce_img_pil, (t1_img_pil.width, 0))
-
-            # 保存图像
-            combined_img3.save(os.path.join(save_dir_modality, split_dir, f"{patient_name}_{idx}.jpg"))
-    elif task_mode=='one2many':#many to one tasks
-        pass
-    elif task_mode=='many2one':# many to one tasks
-        pass
+                        # 保存图像
+                        if patient_id.split(modality)[0]=='.DS_Store':
+                            import pdb;pdb.set_trace()
+                        combined_img3.save(os.path.join(save_dir_modality, split_dir, f"{patient_id.split(modality)[0]}{idx}.jpg"))
+                elif task_mode=='one2many':#many to one tasks
+                    pass
+                elif task_mode=='many2one':# many to one tasks
+                    pass
     # 
     # for idx in range(num_slices):
     #     # 将 T1, FLAIR, T2 切片转换为 PIL 图像并调整到相同的数据范围
@@ -173,6 +175,7 @@ def prepare_paired(args):
     test_patients_name = []
     for train_pre in os.listdir(train_data_dir):
         if os.path.isdir(os.path.join(train_data_dir, train_pre)):
+            
             train_patients_name.append(train_pre)
     for val_pre in os.listdir(val_data_dir):
         if os.path.isdir(os.path.join(val_data_dir, val_pre)):
@@ -186,7 +189,6 @@ def prepare_paired(args):
         for split_dir in train_split_dir:
             if split_dir == "train":
                 patients_name = train_patients_name
-
             elif split_dir == "val":
                 patients_name = valid_patients_name
             elif split_dir == "test":
@@ -219,23 +221,43 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     prepare_paired(args)
-"""
-python nii2jpg.py \
-  --dataset_name 'Breast_MR_train_val_test_nii_dce_only' \
-  --output_root '/date/yifanchen/data_no_mask/2D_jpg' \
-  --input_root '/date/yifanchen/data_no_mask' \
-  --modality 'DCE' \
-  --modality_modality 'dce1_dce2' \
-  --task_mode 'one2one'
-"""
-"""
-python nii2jpg.py \
-  --dataset_name 'Breast_MR_train_val_test_nii_dce_only' \
-  --output_root '/date/yifanchen/data_no_mask/2D_jpg' \
-  --input_root '/date/yifanchen/data_no_mask' \
-  --modality 'DCE' \
-  --modality_modality 'dce13_dce2' \
-  --task_mode 'many2one'
 
 """
+python nii2jpg_more_period.py \
+  --dataset_name 'Adrenal_CT_train_val_test' \
+  --output_root '/date/yifanchen/data_no_mask/2D_jpg' \
+  --input_root '../../data' \
+  --modality 'CT' \
+  --modality_modality 'CT_CTC' \
+  --task_mode 'one2one'
+python nii2jpg_more_period.py \
+  --dataset_name 'Bladder_Kidney_CT_train_val_test' \
+  --output_root '/date/yifanchen/data_no_mask/2D_jpg' \
+  --input_root '../../data' \
+  --modality 'CT' \
+  --modality_modality 'CT_CTC' \
+  --task_mode 'one2one'
+python nii2jpg_more_period.py \
+  --dataset_name 'Lung_CT_train_val_test' \
+  --output_root '/date/yifanchen/data_no_mask/2D_jpg' \
+  --input_root '../../data' \
+  --modality 'CT' \
+  --modality_modality 'CT_CTC' \
+  --task_mode 'one2one'
+python nii2jpg_more_period.py \
+  --dataset_name 'Stomach_Colon_Liver_Pancreas_CT_train_val_test' \
+  --output_root '/date/yifanchen/data_no_mask/2D_jpg' \
+  --input_root '../../data' \
+  --modality 'CT' \
+  --modality_modality 'CT_CTC' \
+  --task_mode 'one2one'
+python nii2jpg_more_period.py \
+  --dataset_name 'Uterus_Ovary_CT_train_val_test' \
+  --output_root '/date/yifanchen/data_no_mask/2D_jpg' \
+  --input_root '../../data' \
+  --modality 'CT' \
+  --modality_modality 'CT_CTC' \
+  --task_mode 'one2one'
+"""
+
     
