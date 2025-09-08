@@ -1,6 +1,5 @@
 import os
 import shutil
-
 # 原始文件夹路径
 source_root = '/date/yifanchen/data_no_mask/2D_jpg'
 source_folders = [
@@ -10,9 +9,22 @@ source_folders = [
     'Stomach_one2one_jpg',
     'Uterus_one2one_jpg'
 ]
-
+source_folder='slice_split'
 # 目标合并文件夹
-target_root = '/date/yifanchen/data_no_mask/2D_jpg/all_CT2CTC_jpg'
+target_root = '/date/yifanchen/data_no_mask/2D_jpg/allCT_split_slice_jpg'
+
+# # 原始文件夹路径
+# source_root = '/date/yifanchen/data_no_mask/2D_jpg'
+# source_folders = [
+#     'Adrenal_one2one_jpg',
+#     'Bladder_one2one_jpg',
+#     'Lung_one2one_jpg',
+#     'Stomach_one2one_jpg',
+#     'Uterus_one2one_jpg'
+# ]
+# source_folder='CT_CTC'
+# # 目标合并文件夹
+# target_root = '/date/yifanchen/data_no_mask/2D_jpg/all_CT2CTC_jpg'
 
 # 保证目标文件夹存在
 os.makedirs(target_root, exist_ok=True)
@@ -27,7 +39,7 @@ for split in splits:
 
     # 遍历每个源文件夹
     for folder in source_folders:
-        source_split_dir = os.path.join(source_root, folder, 'CT_CTC', split)
+        source_split_dir = os.path.join(source_root, folder, source_folder, split)
         if not os.path.exists(source_split_dir):
             print(f"Warning: {source_split_dir} does not exist, skipping.")
             continue
