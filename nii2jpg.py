@@ -105,7 +105,21 @@ def process_patient(patient_name, split_dir, train_data_dir, test_data_dir, val_
             # 保存图像
             combined_img3.save(os.path.join(save_dir_modality, split_dir, f"{patient_name}_{idx}.jpg"))
     elif task_mode=='one2many':#many to one tasks （dce1-> dce2 dce3）
-        pass
+        for idx in range(total_slices):
+            # 将 dce1, dce2, dce3 切片转换为 PIL 图像并调整到相同的数据范围, 保持原来nii的方向
+            dce1_img_pil = Image.fromarray(normalize_image(no_c_data[:, :, idx])).rotate(90, expand=True)
+            dce2_img_pil = Image.fromarray(normalize_image(with_c_data[:, :, idx])).rotate(90, expand=True)
+            dce3_img_pil = Image.fromarray(normalize_image(with_c_2_data[:, :, idx])).rotate(90, expand=True)
+            # left=input=dce1拼接图像 dce1  -> dce1 -> dce1 RGB三通道
+            combined_img_left = Image.merge("RGB", (dce1_img_pil, dce1_img_pil, dce1_img_pil))
+            # right=gt=dce+dce3+dce1(读的时候去掉第三通道的dce1)拼接图像 dce2  -> dce3 -> dce1 RGB三通道
+            combined_img_right = Image.merge("RGB", (dce2_img_pil, dce3_img_pil, dce1_img_pil))
+            combined_img = Image.new('RGB',
+                                     (combined_img_left.width + combined_img_right.width, combined_img_left.height))
+            combined_img.paste(combined_img_left, (0, 0))
+            combined_img.paste(combined_img_right, (combined_img_left.width, 0))
+            # 保存图像
+            combined_img.save(os.path.join(save_dir_modality, split_dir, f"{patient_name}_{idx}.jpg"))
     elif task_mode=='many2one':# many to one tasks （dce1  dce3 -> dce2）
         for idx in range(total_slices):
             # 将 dce1, dce2, dce3 切片转换为 PIL 图像并调整到相同的数据范围, 保持原来nii的方向
@@ -150,7 +164,7 @@ def prepare_paired(args):
     modality=args.modality
 
     dataset_name = args.dataset_name
-    output_root = os.path.join(args.output_root, f'{dataset_name.split("_")[0]}_{task_mode}_jpg')
+    output_root = os.path.join(args.output_root, f'{dataset_name.split("_")[0]}_{task_mode}_jpg2')
     input_root = os.path.join(args.input_root, dataset_name)
 
     train_data_dir = os.path.join(input_root,'train')

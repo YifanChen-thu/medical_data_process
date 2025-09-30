@@ -18,7 +18,7 @@ def save_dce_only(mat_path, output_dir):
     
     affine = np.diag(np.append(img_resolution, 1.0))
     
-    dce_keys = ['dce1', 'dce2', 'dce3']
+    dce_keys = ['dce1', 'dce2', 'dce3', 'tumor', 'tumor1']
     
     for key in dce_keys:
         if key in mat_data:
@@ -33,7 +33,7 @@ def save_dce_only(mat_path, output_dir):
 
 def batch_convert_dce_only(input_root, output_root):
     """
-    批量处理 train/val/test 文件夹中的 .mat 文件，只保存 dce1/dce2/dce3
+    批量处理 train/val/test 文件夹中的 .mat 文件，只保存 dce1/dce2/dce3/tumor/tumor1
     """
     for split in ['train', 'val', 'test']:
         input_dir = os.path.join(input_root, split)
@@ -50,6 +50,6 @@ def batch_convert_dce_only(input_root, output_root):
 
 
 input_root = '../../data/Breast_MR_train_val_test/'
-output_root = '/date/yifanchen/data_no_mask/Breast_MR_train_val_test_nii_dce_only/'
+output_root = '/date/yifanchen/data_mask/Breast_dce_train_val_test_nii_mask'
 
 batch_convert_dce_only(input_root, output_root)
