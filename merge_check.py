@@ -88,6 +88,6 @@ def check_merged_dataset(reference_dataset, merged_dataset):
 
 # ===== 示例调用 =====
 if __name__ == "__main__":
-    reference = "/date/yifanchen/data/Uterus_Ovary_CT_train_val_test"
-    merged   = "/date/yifanchen/data_mask/Uterus_Ovary_CT_train_val_test"
+    reference = "/date/yifanchen/data/Stomach_Colon_Liver_Pancreas_CT_train_val_test"
+    merged   = "/date/yifanchen/data_mask/Stomach_Colon_Liver_Pancreas_CT_train_val_test"
     check_merged_dataset(reference, merged)

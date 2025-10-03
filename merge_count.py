@@ -43,5 +43,5 @@ def count_cases_periods(merged_dataset):
 
 # ===== 示例调用 =====
 if __name__ == "__main__":
-    merged = "/date/yifanchen/data_mask/Uterus_Ovary_CT_train_val_test"
+    merged = '/date/yifanchen/data_mask/all_ct_mask_nii'
     count_cases_periods(merged)

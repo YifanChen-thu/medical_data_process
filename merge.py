@@ -78,10 +78,13 @@ def merge_datasets(reference_dataset, datasets_to_merge, output_root="/date/yifa
 
 # ========== 示例调用 ==========
 if __name__ == "__main__":
-    reference = "/date/yifanchen/data/Uterus_Ovary_CT_train_val_test"
+    reference = "/date/yifanchen/data/Stomach_Colon_Liver_Pancreas_CT_train_val_test"
     sources = [
-        "/date/yifanchen/data_each_organ/CPTAC-UCEC",
-        "/date/yifanchen/data_each_organ/TCGA-OV",
-        "/date/yifanchen/data_each_organ/TCGA-UCEC"
+        "/date/yifanchen/data_each_organ/colon/CMB-CRC",
+        "/date/yifanchen/data_each_organ/colon/TCGA-COAD",
+        "/date/yifanchen/data_each_organ/pancreas/CPTAC-PDA",
+        "/date/yifanchen/data_each_organ/stomach/TCGA-STAD",
+        "/date/yifanchen/data_each_organ/liver/HCC-TACE-Seg",
+        "/date/yifanchen/data_each_organ/liver/TCGA-LIHC"
     ]
     merge_datasets(reference, sources)
